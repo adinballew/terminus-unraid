@@ -6,8 +6,20 @@
 # Base image is Debian-slim (ruby:4.0.6-slim)
 # ─────────────────────────────────────────────────────────────
 
-# ── Stage: Copy Valkey binary from official Alpine image ──
-FROM valkey/valkey:9-alpine AS valkey-bin
+# ── Stage: Build Valkey from source (glibc-compatible) ──
+FROM ghcr.io/usetrmnl/terminus:latest AS valkey-builder
+
+USER root
+RUN apt-get update -qq \
+  && apt-get install --no-install-recommends -y build-essential tcl \
+  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+ARG VALKEY_VERSION=9.1.0
+RUN curl -fsSL https://github.com/valkey-io/valkey/archive/refs/tags/${VALKEY_VERSION}.tar.gz | tar xz -C /tmp \
+  && cd /tmp/valkey-${VALKEY_VERSION} \
+  && make -j$(nproc) BUILD_TLS=yes \
+  && make install \
+  && rm -rf /tmp/valkey-${VALKEY_VERSION}
 
 # ── Final stage: all-in-one ──
 FROM ghcr.io/usetrmnl/terminus:latest AS final
@@ -29,9 +41,9 @@ RUN apt-get update -qq \
   && mkdir -p /var/run/postgresql \
   && chown postgres:postgres /var/run/postgresql
 
-# Copy Valkey binary from Alpine stage
-COPY --from=valkey-bin /usr/local/bin/valkey-server /usr/local/bin/valkey-server
-COPY --from=valkey-bin /usr/local/bin/valkey-cli /usr/local/bin/valkey-cli
+# Copy Valkey binaries built from source (glibc-linked)
+COPY --from=valkey-builder /usr/local/bin/valkey-server /usr/local/bin/valkey-server
+COPY --from=valkey-builder /usr/local/bin/valkey-cli /usr/local/bin/valkey-cli
 RUN chmod +x /usr/local/bin/valkey-server /usr/local/bin/valkey-cli \
   && groupadd --system valkey \
   && useradd --system --gid valkey --home-dir /var/valkey valkey \
