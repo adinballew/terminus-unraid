@@ -1,26 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ════════════════════════════════════════════════════════════
 # Terminus All-in-One Entrypoint
 # Initializes PostgreSQL, Valkey, and Terminus app on first run
-# ════════════════════════════════════════════════════════════
 
-# ── Defaults / Environment ──
+# Defaults / Environment
 POSTGRES_USER="${POSTGRES_USER:-terminus}"
-POSTGRES_PASSWORD="${POST…ord}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-changeme_pg}"
 POSTGRES_DB="${POSTGRES_DB:-terminus}"
-VALKEY_PASSWORD="${VALK…ord}"
-APP_SECRET="***"
+VALKEY_PASSWORD="${VALKEY_PASSWORD:-changeme_vk}"
+APP_SECRET="${APP_SECRET:-changeme_secret}"
 API_URI="${API_URI:-http://localhost:2300}"
+APP_SETUP="${APP_SETUP:-true}"
 
 export PGDATA="/var/lib/postgresql/18/docker"
-export PGPASSWORD="${POST…ORD}"
-
-# Add PostgreSQL binaries to PATH
+export PGPASSWORD="${POSTGRES_PASSWORD}"
 export PATH="/usr/lib/postgresql/18/bin:${PATH}"
 
-# ── Initialize PostgreSQL if needed ──
+# Initialize PostgreSQL if needed
 if [ ! -s "${PGDATA}/PG_VERSION" ]; then
   echo "[entrypoint] Initializing PostgreSQL database cluster..."
   mkdir -p "${PGDATA}"
@@ -47,27 +44,30 @@ PGHBA
   echo "[entrypoint] PostgreSQL initialized."
 fi
 
-# ── Set Valkey password in config ──
+# Set Valkey password in config
 if [ -n "${VALKEY_PASSWORD}" ]; then
   sed -i "s/^# requirepass .*/requirepass \"${VALKEY_PASSWORD}\"/" /etc/valkey/valkey.conf 2>/dev/null || true
   grep -q "^requirepass" /etc/valkey/valkey.conf || echo "requirepass \"${VALKEY_PASSWORD}\"" >> /etc/valkey/valkey.conf
 fi
 
-# ── Write env file for supervisord to pass to Terminus processes ──
+# Write env file for supervisord to pass to Terminus processes
+DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DB}"
+KEYVALUE_URL="redis://:${VALKEY_PASSWORD}@127.0.0.1:6379/0"
+
 cat > /etc/terminus-env <<ENVFILE
-DATABASE_URL=postgres://${POSTGRES_USER}:${POST…WORD}@127.0.0.1:5432/${POSTGRES_DB}
-KEYVALUE_URL=redis://:***}@127.0.0.1:6379/0
+DATABASE_URL=${DATABASE_URL}
+KEYVALUE_URL=${KEYVALUE_URL}
 HANAMI_PORT=2300
-APP_SECRET=***
+APP_SECRET=${APP_SECRET}
 API_URI=${API_URI}
-APP_SETUP=${APP_SETUP:-true}
+APP_SETUP=${APP_SETUP}
 HANAMI_ENV=production
 RACK_ENV=production
 PATH=/usr/local/bundle/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENVFILE
 chmod 644 /etc/terminus-env
 
-# ── Start PostgreSQL temporarily for migrations, then stop ──
+# Start PostgreSQL temporarily for initial setup
 echo "[entrypoint] Starting PostgreSQL for initial setup..."
 su postgres -c "pg_ctl -D \"${PGDATA}\" -w -l /var/log/postgres-startup.log start" || true
 sleep 2
