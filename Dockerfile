@@ -72,6 +72,10 @@ ENV PGDATA=/var/lib/postgresql/18/docker
 # Valkey data directory
 ENV VALKEY_DATA=/var/valkey
 
+ENV HANAMI_ENV=production \
+    HANAMI_SERVE_ASSETS=true \
+    RACK_ENV=production
+
 EXPOSE 2300
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \

@@ -25,6 +25,9 @@ fi
 # Fix ownership of valkey data
 chown -R valkey:valkey /var/valkey 2>/dev/null || true
 
+# Fix ownership of uploads
+chown -R app:app /app/public/uploads 2>/dev/null || true
+
 # Initialize PostgreSQL if needed
 if [ ! -s "${PGDATA}/PG_VERSION" ]; then
   echo "[entrypoint] Initializing PostgreSQL database cluster..."
@@ -68,10 +71,11 @@ if [ -n "${VALKEY_PASSWORD}" ]; then
   grep -q "^requirepass" /etc/valkey/valkey.conf || echo "requirepass \"${VALKEY_PASSWORD}\"" >> /etc/valkey/valkey.conf
 fi
 
-# Write env file for supervisord to pass to Terminus processes
+# Build Terminus env vars
 DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DB}"
 KEYVALUE_URL="redis://:${VALKEY_PASSWORD}@127.0.0.1:6379/0"
 
+# Write env file for supervisord to pass to Terminus processes
 cat > /etc/terminus-env <<ENVFILE
 DATABASE_URL=${DATABASE_URL}
 KEYVALUE_URL=${KEYVALUE_URL}
@@ -84,6 +88,26 @@ RACK_ENV=production
 PATH=/usr/local/bundle/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENVFILE
 chmod 644 /etc/terminus-env
+
+# Export env vars for asset compilation
+export DATABASE_URL
+export KEYVALUE_URL
+export HANAMI_PORT=2300
+export APP_SECRET
+export API_URI
+export APP_SETUP
+export HANAMI_ENV=production
+export RACK_ENV=production
+
+# Precompile Hanami assets if not already present
+if [ ! -f /app/public/assets/assets.json ]; then
+  echo "[entrypoint] Compiling Hanami assets..."
+  git config --global --add safe.directory /app 2>/dev/null || true
+  cd /app
+  bundle exec hanami assets compile 2>&1 || echo "[entrypoint] WARNING: asset compilation failed"
+  chown -R app:app /app/public/assets 2>/dev/null || true
+  echo "[entrypoint] Assets compiled."
+fi
 
 echo "[entrypoint] Initialization complete. Starting supervisord..."
 
