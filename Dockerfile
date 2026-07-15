@@ -33,7 +33,8 @@ RUN apt-get update -qq \
 COPY --from=valkey-bin /usr/local/bin/valkey-server /usr/local/bin/valkey-server
 COPY --from=valkey-bin /usr/local/bin/valkey-cli /usr/local/bin/valkey-cli
 RUN chmod +x /usr/local/bin/valkey-server /usr/local/bin/valkey-cli \
-  && useradd --system --gid 100 --home-dir /var/valkey valkey 2>/dev/null || true \
+  && groupadd --system valkey \
+  && useradd --system --gid valkey --home-dir /var/valkey valkey \
   && mkdir -p /var/valkey \
   && chown valkey:valkey /var/valkey
 
