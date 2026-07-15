@@ -3,51 +3,52 @@
 # ─────────────────────────────────────────────────────────────
 # Terminus All-in-One for Unraid
 # Bundles: Terminus (Ruby Hanami) + PostgreSQL 18 + Valkey 9
+# Base image is Debian-slim (ruby:4.0.6-slim)
 # ─────────────────────────────────────────────────────────────
 
-FROM ghcr.io/usetrmnl/terminus:latest AS terminus-base
-
-# ── Stage: PostgreSQL 18 client binaries ──
-FROM postgres:18-alpine AS postgres-builder
-
-# ── Stage: Valkey 9 ──
-FROM valkey/valkey:9-alpine AS valkey-builder
+# ── Stage: Copy Valkey binary from official Alpine image ──
+FROM valkey/valkey:9-alpine AS valkey-bin
 
 # ── Final stage: all-in-one ──
 FROM ghcr.io/usetrmnl/terminus:latest AS final
 
 USER root
 
-# Install supervisord, PostgreSQL 18, Valkey 9, and supporting tools
-RUN apk add --no-cache \
+# Install supervisor, PostgreSQL 18 server, and tools via apt
+# Base image already has the PGDG repo configured and postgresql-client-18 installed
+RUN apt-get update -qq \
+  && apt-get install --no-install-recommends -y \
     supervisor \
-    postgresql18 \
-    postgresql18-client \
-    postgresql18-contrib \
-    valkey \
-    bash \
-    curl \
+    postgresql-18 \
     tzdata \
+  && rm -rf /var/lib/apt/lists /var/cache/apt/archives \
+  # Create postgres user if not exists
+  && id postgres 2>/dev/null || useradd --system --gid 100 --home-dir /var/lib/postgresql postgres \
   && mkdir -p /var/lib/postgresql/18/docker \
   && chown -R postgres:postgres /var/lib/postgresql \
   && mkdir -p /var/run/postgresql \
-  && chown postgres:postgres /var/run/postgresql \
+  && chown postgres:postgres /var/run/postgresql
+
+# Copy Valkey binary from Alpine stage
+COPY --from=valkey-bin /usr/local/bin/valkey-server /usr/local/bin/valkey-server
+COPY --from=valkey-bin /usr/local/bin/valkey-cli /usr/local/bin/valkey-cli
+RUN chmod +x /usr/local/bin/valkey-server /usr/local/bin/valkey-cli \
+  && useradd --system --gid 100 --home-dir /var/valkey valkey 2>/dev/null || true \
   && mkdir -p /var/valkey \
   && chown valkey:valkey /var/valkey
 
-# Copy Valkey config defaults
+# Copy Valkey config
 COPY config/valkey.conf /etc/valkey/valkey.conf
 
 # Copy supervisord config
-COPY config/supervisord.conf /etc/supervisord.conf
+COPY config/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Copy entrypoint
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Ensure Terminus app dirs exist and are owned by the app user
-RUN mkdir -p /app/public/fonts /app/public/uploads /usr/share/fonts/terminus \
-  && chown -R $(id -u):$(id -g) /app/public/fonts /app/public/uploads 2>/dev/null || true
+# Ensure Terminus app dirs exist
+RUN mkdir -p /app/public/fonts /app/public/uploads /usr/share/fonts/terminus
 
 # PostgreSQL data directory
 ENV PGDATA=/var/lib/postgresql/18/docker
@@ -55,13 +56,10 @@ ENV PGDATA=/var/lib/postgresql/18/docker
 # Valkey data directory
 ENV VALKEY_DATA=/var/valkey
 
-# Expose Terminus web port
 EXPOSE 2300
 
-# Health check hits Terminus web
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD curl -sf http://localhost:2300/ || exit 1
 
-# Single entrypoint starts supervisord which manages all three processes
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["supervisord", "-n", "-c", "/etc/supervisord.conf"]
+CMD ["supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
