@@ -18,13 +18,11 @@ Set POSTGRES_PASSWORD, VALKEY_PASSWORD, and APP_SECRET on first run. Data persis
 
   <Config Name="Web Port" Target="2300" Default="2300" Mode="tcp" Type="Port" Display="always" Required="true">2300</Config>
 
-  <Config Name="Appdata Path" Target="/mnt/user/appdata/terminus-unraid" Default="/mnt/user/appdata/terminus-unraid" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/terminus-unraid</Config>
-
   <Config Name="PostgreSQL Data Path" Target="/var/lib/postgresql/18/docker" Default="/mnt/user/appdata/terminus-unraid/database" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/terminus-unraid/database</Config>
 
   <Config Name="Valkey Data Path" Target="/var/valkey" Default="/mnt/user/appdata/terminus-unraid/keyvalue" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/terminus-unraid/keyvalue</Config>
 
-  <Config Name="Fonts Path" Target="/usr/share/fonts/terminus" Default="/mnt/user/appdata/terminus-unraid/fonts" Mode="rw" Type="Path" Display="advanced" Required="false">/mnt/user/appdata/terminus-unraid/fonts</Config>
+  <Config Name="Fonts Path" Target="/app/public/fonts" Default="/mnt/user/appdata/terminus-unraid/fonts/web-fonts" Mode="rw" Type="Path" Display="advanced" Required="false">/mnt/user/appdata/terminus-unraid/fonts/web-fonts</Config>
 
   <Config Name="Uploads Path" Target="/app/public/uploads" Default="/mnt/user/appdata/terminus-unraid/uploads" Mode="rw" Type="Path" Display="advanced" Required="false">/mnt/user/appdata/terminus-unraid/uploads</Config>
 
