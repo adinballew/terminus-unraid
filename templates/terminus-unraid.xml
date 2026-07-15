@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Terminus</Name>
+  <Repository>ghcr.io/adinballew/terminus-unraid:latest</Repository>
+  <Registry>https://ghcr.io</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/adinballew/terminus-unraid/issues</Support>
+  <Project>https://github.com/usetrmnl/terminus</Project>
+  <Overview>Terminus is a self-hosted API for TRMNL e-ink devices. This all-in-one container bundles Terminus (Ruby Hanami web app), PostgreSQL 18, and Valkey 9 with supervisord for easy deployment on Unraid.&#13;
+&#13;
+Set POSTGRES_PASSWORD, VALKEY_PASSWORD, and APP_SECRET on first run. Data persists in the configured appdata directory.</Overview>
+  <Category>Network:Web Tools:Utilities</Category>
+  <WebUI>http://[IP]:[PORT:2300]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/adinballew/terminus-unraid/main/assets/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/adinballew/terminus-unraid/main/templates/terminus-unraid.xml</TemplateURL>
+
+  <Config Name="Web Port" Target="2300" Default="2300" Mode="tcp" Type="Port" Display="always" Required="true">2300</Config>
+
+  <Config Name="Appdata Path" Target="/mnt/user/appdata/terminus-unraid" Default="/mnt/user/appdata/terminus-unraid" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/terminus-unraid</Config>
+
+  <Config Name="PostgreSQL Data Path" Target="/var/lib/postgresql/18/docker" Default="/mnt/user/appdata/terminus-unraid/database" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/terminus-unraid/database</Config>
+
+  <Config Name="Valkey Data Path" Target="/var/valkey" Default="/mnt/user/appdata/terminus-unraid/keyvalue" Mode="rw" Type="Path" Display="always" Required="true">/mnt/user/appdata/terminus-unraid/keyvalue</Config>
+
+  <Config Name="Fonts Path" Target="/usr/share/fonts/terminus" Default="/mnt/user/appdata/terminus-unraid/fonts" Mode="rw" Type="Path" Display="advanced" Required="false">/mnt/user/appdata/terminus-unraid/fonts</Config>
+
+  <Config Name="Uploads Path" Target="/app/public/uploads" Default="/mnt/user/appdata/terminus-unraid/uploads" Mode="rw" Type="Path" Display="advanced" Required="false">/mnt/user/appdata/terminus-unraid/uploads</Config>
+
+  <Config Name="PostgreSQL Password" Target="POSTGRES_PASSWORD" Default="" Type="Variable" Display="always" Required="true">CHANGE_ME_PG_PASSWORD</Config>
+
+  <Config Name="Valkey Password" Target="VALKEY_PASSWORD" Default="" Type="Variable" Display="always" Required="true">CHANGE_ME_VALKEY_PASSWORD</Config>
+
+  <Config Name="App Secret" Target="APP_SECRET" Default="" Type="Variable" Display="always" Required="true">CHANGE_ME_APP_SECRET</Config>
+
+  <Config Name="API URI" Target="API_URI" Default="http://[IP]:[PORT:2300]" Type="Variable" Display="always" Required="true">http://192.168.0.40:2300</Config>
+
+  <Config Name="App Setup" Target="APP_SETUP" Default="true" Type="Variable" Display="advanced" Required="false">true</Config>
+
+  <Config Name="Postgres User" Target="POSTGRES_USER" Default="terminus" Type="Variable" Display="advanced" Required="false">terminus</Config>
+
+  <Config Name="Postgres DB" Target="POSTGRES_DB" Default="terminus" Type="Variable" Display="advanced" Required="false">terminus</Config>
+
+  <Config Name="Timezone" Target="TZ" Default="America/Phoenix" Type="Variable" Display="advanced" Required="false">America/Phoenix</Config>
+</Container>
