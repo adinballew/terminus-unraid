@@ -4,18 +4,26 @@ set -euo pipefail
 # Terminus All-in-One Entrypoint
 # Initializes PostgreSQL, Valkey, and Terminus app on first run
 
-# Defaults / Environment
 POSTGRES_USER="${POSTGRES_USER:-terminus}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-changeme_pg}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
 POSTGRES_DB="${POSTGRES_DB:-terminus}"
-VALKEY_PASSWORD="${VALKEY_PASSWORD:-changeme_vk}"
-APP_SECRET="${APP_SECRET:-changeme_secret}"
+VALKEY_PASSWORD="${VALKEY_PASSWORD}"
+APP_SECRET="${APP_SECRET}"
 API_URI="${API_URI:-http://localhost:2300}"
 APP_SETUP="${APP_SETUP:-true}"
 
 export PGDATA="/var/lib/postgresql/18/docker"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 export PATH="/usr/lib/postgresql/18/bin:${PATH}"
+
+# Fix ownership of PG data
+if [ -d "${PGDATA}" ]; then
+  chown -R postgres:postgres "${PGDATA}"
+  chmod 0700 "${PGDATA}"
+fi
+
+# Fix ownership of valkey data
+chown -R valkey:valkey /var/valkey 2>/dev/null || true
 
 # Initialize PostgreSQL if needed
 if [ ! -s "${PGDATA}/PG_VERSION" ]; then
@@ -42,6 +50,16 @@ PGHBA
   fi
 
   echo "[entrypoint] PostgreSQL initialized."
+else
+  # Existing data — make sure pg_hba allows local connections
+  if ! grep -q "127.0.0.1" "${PGDATA}/pg_hba.conf" 2>/dev/null; then
+    cat > "${PGDATA}/pg_hba.conf" <<'PGHBA'
+local   all             all                                     trust
+host    all             all             127.0.0.1/32            trust
+host    all             all             ::1/128                 trust
+PGHBA
+    chown postgres:postgres "${PGDATA}/pg_hba.conf"
+  fi
 fi
 
 # Set Valkey password in config
@@ -66,12 +84,6 @@ RACK_ENV=production
 PATH=/usr/local/bundle/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENVFILE
 chmod 644 /etc/terminus-env
-
-# Start PostgreSQL temporarily for initial setup
-echo "[entrypoint] Starting PostgreSQL for initial setup..."
-su postgres -c "pg_ctl -D \"${PGDATA}\" -w -l /var/log/postgres-startup.log start" || true
-sleep 2
-su postgres -c "pg_ctl -D \"${PGDATA}\" -w stop" || true
 
 echo "[entrypoint] Initialization complete. Starting supervisord..."
 

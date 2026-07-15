@@ -26,14 +26,17 @@ FROM ghcr.io/usetrmnl/terminus:latest AS final
 
 USER root
 
-# Install supervisor, PostgreSQL 18 server, and tools via apt
+# Install supervisor, PostgreSQL 18 server, locales, and tools via apt
 # Base image already has the PGDG repo configured and postgresql-client-18 installed
 RUN apt-get update -qq \
   && apt-get install --no-install-recommends -y \
     supervisor \
+    locales \
     postgresql-18 \
     tzdata \
   && rm -rf /var/lib/apt/lists /var/cache/apt/archives \
+  && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+  && locale-gen \
   # Create postgres user if not exists
   && id postgres 2>/dev/null || useradd --system --gid 100 --home-dir /var/lib/postgresql postgres \
   && mkdir -p /var/lib/postgresql/18/docker \
