@@ -13,7 +13,7 @@
 Set POSTGRES_PASSWORD, VALKEY_PASSWORD, and APP_SECRET on first run. Data persists in the configured appdata directory.</Overview>
   <Category>Network:Web Tools:Utilities</Category>
   <WebUI>http://[IP]:[PORT:2300]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/adinballew/terminus-unraid/main/assets/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/adinballew/terminus-unraid/main/assets/icon.svg</Icon>
   <TemplateURL>https://raw.githubusercontent.com/adinballew/terminus-unraid/main/templates/terminus-unraid.xml</TemplateURL>
 
   <Config Name="Web Port" Target="2300" Default="2300" Mode="tcp" Type="Port" Display="always" Required="true">2300</Config>
