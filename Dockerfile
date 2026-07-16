@@ -76,7 +76,7 @@ ENV HANAMI_ENV=production \
     HANAMI_SERVE_ASSETS=true \
     RACK_ENV=production
 
-EXPOSE 2300
+EXPOSE 2300 5432
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD curl -sf http://localhost:2300/ || exit 1

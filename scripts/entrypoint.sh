@@ -46,6 +46,7 @@ if [ ! -s "${PGDATA}/PG_VERSION" ]; then
 local   all             all                                     md5
 host    all             all             127.0.0.1/32            md5
 host    all             all             ::1/128                 md5
+host    all             all             192.168.0.0/24          md5
 PGHBA
 
   if [ "${POSTGRES_USER}" != "${POSTGRES_DB}" ]; then
@@ -60,6 +61,7 @@ else
 local   all             all                                     trust
 host    all             all             127.0.0.1/32            trust
 host    all             all             ::1/128                 trust
+host    all             all             192.168.0.0/24          md5
 PGHBA
     chown postgres:postgres "${PGDATA}/pg_hba.conf"
   fi
