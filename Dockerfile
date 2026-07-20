@@ -66,6 +66,10 @@ RUN chmod +x /entrypoint.sh
 # Ensure Terminus app dirs exist
 RUN mkdir -p /app/public/fonts /app/public/uploads /usr/share/fonts/terminus
 
+# Install monochrome Noto Emoji font for emoji rendering in Chromium
+COPY assets/NotoEmoji-Regular.ttf /usr/share/fonts/truetype/noto/NotoEmoji-Regular.ttf
+RUN fc-cache -f
+
 # PostgreSQL data directory
 ENV PGDATA=/var/lib/postgresql/18/docker
 
