@@ -1,0 +1,9 @@
+[project]
+name = "terminus-unraid"
+version = "0.1.0"
+description = "Terminus for Unraid — all-in-one Docker image"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = []
